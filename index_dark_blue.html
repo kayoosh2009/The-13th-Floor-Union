@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Казино для детей</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('img/back.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: rgba(0, 0, 50, 0.7);
+        }
+        .balance-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: rgba(0, 50, 100, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .plus-button {
+            background-color: #003366;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .username {
+            font-size: 18px;
+            margin-right: 20px;
+            color: #B0E0E6;
+        }
+        .referral-button {
+            background-color: #003366;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .cards {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 50px;
+        }
+        .card {
+            background-color: rgba(0, 0, 50, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            width: 250px;
+            border: 1px solid #003366;
+        }
+        .card img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+        .card button {
+            background-color: #003366;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="balance-box">
+            <span>100,000 🍃</span>
+            <button class="plus-button" onclick="showCreditMessage()">+</button>
+        </div>
+        <div>
+            <span class="username">КАЙ МИЯМОТО</span>
+            <button class="referral-button" onclick="copyReferralLink()">Реферальная программа</button>
+        </div>
+    </div>
+
+    <div class="cards">
+        <div class="card">
+            <img src="img/slot.png" alt="Слоты">
+            <h2>Слоты</h2>
+            <button onclick="playSound(); window.location.href='slots.html'">Играть</button>
+        </div>
+        <div class="card">
+            <img src="img/min.png" alt="Мины">
+            <h2>Мины</h2>
+            <button onclick="playSound(); window.location.href='mines.html'">Играть</button>
+        </div>
+    </div>
+
+    <script>
+        function playSound() {
+            const audio = new Audio("sound/pop.mp3");
+            audio.play();
+        }
+
+        function showCreditMessage() {
+            playSound();
+            alert("Ты что малой, у тебя же ещё кредитки нету!");
+        }
+
+        function copyReferralLink() {
+            playSound();
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert("Реферальная ссылка скопирована");
+            });
+        }
+    </script>
+</body>
+</html>
