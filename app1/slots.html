@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Слоты</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('img/back.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 15px 30px;
+            background-color: rgba(0, 0, 50, 0.7);
+        }
+        .balance-box {
+            background-color: rgba(0, 50, 100, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .back-button {
+            background-color: #003366;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .slot-machine {
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .big-red-square {
+            width: 300px;
+            height: 150px;
+            background-color: #FF0000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        .white-squares {
+            display: flex;
+            gap: 10px;
+        }
+        .white-square {
+            width: 80px;
+            height: 80px;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            border-radius: 5px;
+        }
+        .spin-button {
+            background-color: #003366;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .win-animation {
+            font-size: 24px;
+            color: gold;
+            margin-top: 20px;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="balance-box">
+            <span>Баланс: <span id="balance">100,000</span> 🍃</span>
+        </div>
+        <button class="back-button" onclick="playSound(); window.location.href='index.html'">Вернуться назад</button>
+    </div>
+
+    <div class="slot-machine">
+        <div class="big-red-square">
+            <div class="white-squares" id="white-squares">
+                <div class="white-square" id="square1">🍎</div>
+                <div class="white-square" id="square2">🍊</div>
+                <div class="white-square" id="square3">🍌</div>
+            </div>
+        </div>
+        <button class="spin-button" onclick="spinSlots()">Крутить</button>
+        <div class="win-animation" id="win-animation">+200 🍃</div>
+    </div>
+
+    <script>
+        let balance = 100000;
+        const fruits = ["🍎", "🍊", "🍌", "🍓", "🍇"];
+        
+        function playSound() {
+            const audio = new Audio("sound/pop.mp3");
+            audio.play();
+        }
+
+        function spinSlots() {
+            playSound();
+            
+            // Уменьшаем баланс
+            balance -= 100;
+            document.getElementById("balance").textContent = balance;
+            
+            // Анимация вращения
+            const squares = document.querySelectorAll('.white-square');
+            const animationDuration = 3000; // 3 секунды
+            const startTime = Date.now();
+            
+            function updateSlots() {
+                const elapsed = Date.now() - startTime;
+                if (elapsed < animationDuration) {
+                    squares.forEach(square => {
+                        const randomFruit = fruits[Math.floor(Math.random() * fruits.length)];
+                        square.textContent = randomFruit;
+                    });
+                    requestAnimationFrame(updateSlots);
+                } else {
+                    // Выбираем случайный фрукт для выпадения
+                    const selectedFruit = fruits[Math.floor(Math.random() * fruits.length)];
+                    squares.forEach(square => {
+                        square.textContent = selectedFruit;
+                    });
+                    
+                    // Воспроизводим звук для выпавшего фрукта
+                    const fruitSound = new Audio(`sound/${getFruitSound(selectedFruit)}.mp3`);
+                    fruitSound.play();
+                    
+                    // Начисляем 200 🍃 с анимацией
+                    balance += 200;
+                    document.getElementById("balance").textContent = balance;
+                    
+                    const winAnimation = document.getElementById("win-animation");
+                    winAnimation.style.display = "block";
+                    setTimeout(() => {
+                        winAnimation.style.display = "none";
+                    }, 2000);
+                }
+            }
+            
+            updateSlots();
+        }
+
+        function getFruitSound(fruit) {
+            const fruitSounds = {
+                "🍎": "apple",
+                "🍊": "orange",
+                "🍌": "banana",
+                "🍓": "strawberry",
+                "🍇": "grape"
+            };
+            return fruitSounds[fruit] || "apple";
+        }
+    </script>
+</body>
+</html>
