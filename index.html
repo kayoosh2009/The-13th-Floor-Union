@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --input-bg: #2d2d2d;
+      --primary: #00e676; /* Зеленый неон */
+      --text: #ffffff;
+      --text-sec: #b0b0b0;
+    }
+    
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h2 { color: var(--primary); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ФОРМА ВВОДА */
+    .form-container {
+      background: var(--card);
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 30px;
+    }
+
+    label { display: block; margin-top: 15px; color: var(--text-sec); font-size: 0.9em; }
+    
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      background: var(--input-bg);
+      border: 1px solid #444;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      box-sizing: border-box;
+      outline: none;
+      transition: 0.3s;
+    }
+    
+    input:focus { border-color: var(--primary); }
+
+    button {
+      width: 100%;
+      margin-top: 25px;
+      padding: 14px;
+      background: var(--primary);
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      text-transform: uppercase;
+    }
+    button:hover { opacity: 0.9; }
+    button:disabled { background: #555; cursor: not-allowed; }
+
+    /* СПИСОК ЗАПИСЕЙ */
+    .list-container {
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .record-card {
+      background: var(--card);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      border-left: 4px solid var(--primary);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    }
+
+    .record-header {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-sec);
+      font-size: 0.85em;
+    }
+
+    .data-row {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .data-label { font-size: 0.75em; color: var(--text-sec); margin-bottom: 2px; }
+    
+    .clickable {
+      cursor: pointer;
+      padding: 4px 8px;
+      background: #2a2a2a;
+      border-radius: 4px;
+      word-break: break-all;
+      transition: 0.2s;
+      border: 1px dashed #444;
+    }
+
+    .clickable:hover {
+      background: #333;
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    
+    .clickable:active { transform: scale(0.98); }
+
+    .earnings {
+      font-weight: bold;
+      color: #ffd700; /* Золотой цвет для денег */
+      font-size: 1.1em;
+    }
+
+    /* Уведомление о копировании */
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 2px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1;
+      bottom: 30px;
+      font-size: 17px;
+    }
+    #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+    
+    @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+    @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+    .loader { text-align: center; color: var(--text-sec); margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <h2>Панель Оператора</h2>
+
+  <div class="form-container">
+    <form id="dataForm" onsubmit="handleFormSubmit(this)">
+      
+      <label>Адрес (Address)</label>
+      <input type="text" name="address" placeholder="Введите адрес..." required>
+
+      <label>Ссылка (Link)</label>
+      <input type="text" name="link" placeholder="https://..." required>
+
+      <label>Заработок (Earnings)</label>
+      <input type="text" name="earnings" placeholder="Например: 50$" required>
+
+      <button type="submit" id="btn-submit">Отправить Доклад</button>
+    </form>
+  </div>
+
+  <div class="list-container">
+    <h3>Последние записи:</h3>
+    <div id="recordsList">
+      <div class="loader">Загрузка данных...</div>
+    </div>
+  </div>
+
+  <div id="toast">Скопировано в буфер обмена!</div>
+
+  <script>
+    // При загрузке страницы получаем данные
+    window.onload = function() {
+      loadData();
+    };
+
+    function loadData() {
+      google.script.run.withSuccessHandler(renderRecords).getData();
+    }
+
+    function handleFormSubmit(formObject) {
+      event.preventDefault();
+      const btn = document.getElementById('btn-submit');
+      btn.disabled = true;
+      btn.textContent = "Отправка...";
+
+      google.script.run.withSuccessHandler(function(data) {
+        // Очистить форму и обновить список
+        document.getElementById('dataForm').reset();
+        btn.disabled = false;
+        btn.textContent = "ОТПРАВИТЬ ДОКЛАД";
+        renderRecords(data);
+      }).addRecord(formObject);
+    }
+
+    function renderRecords(dataArray) {
+      const list = document.getElementById('recordsList');
+      list.innerHTML = ''; // Очистить текущий список
+
+      if (!dataArray || dataArray.length === 0) {
+        list.innerHTML = '<div class="loader">Записей пока нет</div>';
+        return;
+      }
+
+      dataArray.forEach(row => {
+        // row[0]=Дата, row[1]=Адрес, row[2]=Ссылка, row[3]=Заработок
+        const card = document.createElement('div');
+        card.className = 'record-card';
+        
+        card.innerHTML = `
+          <div class="record-header">
+            <span>📅 ${row[0]}</span>
+          </div>
+          
+          <div class="data-row">
+            <span class="data-label">АДРЕС (Нажми чтобы скопировать):</span>
+            <span class="clickable" onclick="copyToClipboard('${row[1]}')">${row[1]}</span>
+          </div>
+
+          <div class="data-row">
+            <span class="data-label">ССЫЛКА (Нажми чтобы скопировать):</span>
+            <span class="clickable" onclick="copyToClipboard('${row[2]}')">${row[2]}</span>
+          </div>
+
+          <div class="data-row">
+            <span class="data-label">ЗАРАБОТОК:</span>
+            <span class="earnings">${row[3]}</span>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(function() {
+        showToast();
+      }, function(err) {
+        console.error('Ошибка копирования: ', err);
+      });
+    }
+
+    function showToast() {
+      const x = document.getElementById("toast");
+      x.className = "show";
+      setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+    }
+  </script>
+</body>
+</html>
