@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -28,7 +29,6 @@
       min-height: 100vh;
     }
 
-    /* --- СТАТИСТИКА --- */
     .stats-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -59,7 +59,6 @@
       text-transform: uppercase;
     }
 
-    /* --- СПИСОК --- */
     .list-container {
       width: 100%;
       max-width: 600px;
@@ -72,12 +71,11 @@
       padding: 12px;
       margin-bottom: 10px;
       display: grid;
-      grid-template-columns: 40px 1fr auto; /* Карандаш | Инфо | Деньги */
+      grid-template-columns: 40px 1fr auto;
       gap: 12px;
       align-items: center;
     }
 
-    /* Кнопка редактирования (карандаш) */
     .edit-btn {
       width: 36px;
       height: 36px;
@@ -113,7 +111,9 @@
       text-overflow: ellipsis;
       border: 1px dashed rgba(59, 130, 246, 0.3);
       max-width: 100%;
+      transition: 0.2s;
     }
+    .copy-chip:hover { border-color: var(--accent); color: white; }
     .copy-chip:active { transform: scale(0.95); }
 
     .record-money {
@@ -122,7 +122,7 @@
       font-size: 15px;
     }
 
-    /* --- МОДАЛЬНОЕ ОКНО (Редактирование) --- */
+    /* Модальное окно */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: var(--modal-overlay);
@@ -157,23 +157,14 @@
       box-sizing: border-box;
     }
 
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-    }
+    .modal-actions { display: flex; gap: 10px; }
 
     .btn {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
+      flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
     }
     .btn-save { background: var(--accent); color: white; }
     .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
 
-    /* Уведомление */
     #toast {
       visibility: hidden;
       min-width: 200px;
@@ -219,13 +210,10 @@
     <div class="modal">
       <h3>Редактирование</h3>
       <input type="hidden" id="editIndex">
-      
-      <label style="font-size: 12px; color: #94a3b8;">Ссылка (при смене обновится дата)</label>
-      <input type="text" id="editLink" placeholder="Новая ссылка">
-      
+      <label style="font-size: 12px; color: #94a3b8;">Ссылка</label>
+      <input type="text" id="editLink">
       <label style="font-size: 12px; color: #94a3b8;">Заработок</label>
-      <input type="text" id="editEarnings" placeholder="Заработок">
-      
+      <input type="text" id="editEarnings">
       <div class="modal-actions">
         <button class="btn btn-cancel" onclick="closeModal()">Отмена</button>
         <button class="btn btn-save" id="saveBtn" onclick="saveChanges()">Сохранить</button>
@@ -236,10 +224,21 @@
   <div id="toast">✅ Скопировано!</div>
 
   <script>
+    // ⬇️ ВСТАВЬ СЮДА СВОЮ ССЫЛКУ ИЗ GOOGLE APPS SCRIPT
+    const API_URL = "https://script.google.com/macros/s/AKfycbxd5GabS1a056M1BQ_4ZoPRMN5RdEMYwigpj9R-RpcoKcdYef2giqpe5FJeunao-cFCRw/exec"; 
+
     window.onload = loadData;
 
     function loadData() {
-      google.script.run.withSuccessHandler(renderPage).getData();
+      fetch(API_URL)
+        .then(response => response.json())
+        .then(data => {
+          renderPage(data);
+        })
+        .catch(error => {
+          document.getElementById('recordsList').innerHTML = '<div class="loader" style="color:red">Ошибка подключения</div>';
+          console.error('Error:', error);
+        });
     }
 
     function renderPage(dataArray) {
@@ -248,13 +247,9 @@
     }
 
     function calculateStats(data) {
-      // 1. Количество адресов
       document.getElementById('totalCount').innerText = data.length;
-
-      // 2. Сумма заработка
       let total = 0;
       data.forEach(row => {
-        // Убираем знак $, пробелы и превращаем в число
         let moneyStr = row[3].toString().replace(/[^0-9.]/g, '');
         let val = parseFloat(moneyStr);
         if (!isNaN(val)) total += val;
@@ -271,10 +266,7 @@
         return;
       }
 
-      // dataArray идет так, как в таблице (старые -> новые)
-      // Нам так и нужно по заданию
       dataArray.forEach((row, index) => {
-        // row: [0]Дата, [1]Адрес, [2]Ссылка, [3]Деньги
         const item = document.createElement('div');
         item.className = 'record-item';
         
@@ -282,20 +274,17 @@
 
         item.innerHTML = `
           <div class="edit-btn" onclick="openModal(${index}, '${row[2]}', '${row[3]}')">✏️</div>
-          
           <div class="record-info">
             <span class="record-date">${row[0]}</span>
             <div class="copy-chip" onclick="copyText('${row[1]}')">📍 ${row[1]}</div>
             <div class="copy-chip" onclick="copyText('${row[2]}')">🔗 ${shortLink}</div>
           </div>
-          
           <div class="record-money">${row[3]}</div>
         `;
         list.appendChild(item);
       });
     }
 
-    /* --- ЛОГИКА КОПИРОВАНИЯ --- */
     function copyText(text) {
       navigator.clipboard.writeText(text).then(() => {
         const toast = document.getElementById("toast");
@@ -304,7 +293,6 @@
       });
     }
 
-    /* --- ЛОГИКА МОДАЛЬНОГО ОКНА --- */
     function openModal(index, link, earnings) {
       document.getElementById('editIndex').value = index;
       document.getElementById('editLink').value = link;
@@ -325,12 +313,29 @@
       btn.textContent = "Сохранение...";
       btn.disabled = true;
 
-      google.script.run.withSuccessHandler(function(data) {
+      // Отправляем данные на Google Script через POST запрос
+      fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'update',
+          index: index,
+          link: link,
+          earnings: earnings
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
         closeModal();
         renderPage(data);
         btn.textContent = "Сохранить";
         btn.disabled = false;
-      }).updateRecord(index, link, earnings);
+      })
+      .catch(error => {
+        alert("Ошибка сохранения! Проверьте консоль.");
+        console.error(error);
+        btn.disabled = false;
+        btn.textContent = "Сохранить";
+      });
     }
   </script>
 </body>
